@@ -37,7 +37,7 @@ This project provides a complete infrastructure setup to demonstrate cloud secur
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/cloudsecdemo.git
+git clone https://github.com/CyberLAB-Admin/cloudsecdemo.git
 cd cloudsecdemo
 ```
 
