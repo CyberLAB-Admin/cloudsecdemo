@@ -200,19 +200,9 @@ See `docs/TROUBLESHOOTING.md` for common issues and solutions.
 
 See `LICENSE` file.
 
-## Security
-
-Report security issues to security@yourdomain.com
-
 ## Support
 
 For support:
 1. Check the documentation in `docs/`
 2. Create an issue on GitHub
 3. Contact the maintainers
-
-## Related Projects
-
-- [Cloud Security Scanner](https://github.com/yourusername/cloud-security-scanner)
-- [AWS Security Baseline](https://github.com/yourusername/aws-security-baseline)
-- [EKS Security Tools](https://github.com/yourusername/eks-security-tools)
