@@ -1,0 +1,224 @@
+#############################################################################
+# Cloud Security Demo - Kubernetes Monitoring Configuration
+# 
+# Monitoring configuration including:
+# - ServiceMonitor for Prometheus
+# - PrometheusRule for alerts
+# - PodMonitor for container metrics
+#############################################################################
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: cloudsecdemo-monitor
+  namespace: cloudsecdemo
+  labels:
+    app: cloudsecdemo
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: cloudsecdemo
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 15s
+    scrapeTimeout: 14s
+  namespaceSelector:
+    matchNames:
+      - cloudsecdemo
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cloudsecdemo-alerts
+  namespace: cloudsecdemo
+  labels:
+    app: cloudsecdemo
+    prometheus: k8s
+    role: alert-rules
+spec:
+  groups:
+  - name: cloudsecdemo.rules
+    rules:
+    - alert: HighErrorRate
+      expr: |
+        sum(rate(http_requests_total{status=~"5.."}[5m])) 
+        / 
+        sum(rate(http_requests_total[5m])) > 0.1
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: High HTTP error rate
+        description: "Error rate is above 10% for 5 minutes"
+    
+    - alert: PodCrashLooping
+      expr: |
+        rate(kube_pod_container_status_restarts_total{namespace="cloudsecdemo"}[5m]) > 0.2
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: Pod is crash looping
+        description: "Pod {{ $labels.pod }} is crash looping"
+
+    - alert: SecurityContextViolation
+      expr: |
+        kube_pod_container_status_running{namespace="cloudsecdemo"} > 0
+        and
+        kube_pod_container_status_running{security_context="privileged"} > 0
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: Security context violation detected
+        description: "Pod {{ $labels.pod }} is running with privileged security context"
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: cloudsecdemo-pod-monitor
+  namespace: cloudsecdemo
+  labels:
+    app: cloudsecdemo
+spec:
+  selector:
+    matchLabels:
+      app: cloudsecdemo
+  podMetricsEndpoints:
+  - port: http
+    path: /metrics
+    interval: 15s
+  namespaceSelector:
+    matchNames:
+      - cloudsecdemo
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudsecdemo-grafana-dashboard
+  namespace: cloudsecdemo
+  labels:
+    grafana_dashboard: "true"
+data:
+  dashboard.json: |
+    {
+      "annotations": {
+        "list": []
+      },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "hideControls": false,
+      "links": [],
+      "liveNow": false,
+      "panels": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 0
+          },
+          "id": 1,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "rate(http_requests_total[5m])",
+              "refId": "A"
+            }
+          ],
+          "title": "Request Rate",
+          "type": "timeseries"
+        }
+      ],
+      "refresh": "",
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": [],
+      "templating": {
+        "list": []
+      },
+      "time": {
+        "from": "now-6h",
+        "to": "now"
+      },
+      "timepicker": {},
+      "timezone": "",
+      "title": "CloudSecDemo Dashboard",
+      "uid": "cloudsecdemo",
+      "version": 1,
+      "weekStart": ""
+    }

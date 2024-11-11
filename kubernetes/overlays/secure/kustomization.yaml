@@ -1,0 +1,143 @@
+#############################################################################
+# Cloud Security Demo - Secure Kubernetes Configuration
+# 
+# Secure overlay including:
+# - Pod Security Policies
+# - Network Policies
+# - Resource Limits
+# - Security Context
+#############################################################################
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: cloudsecdemo
+
+bases:
+  - ../../base
+
+# Add security-related resources
+resources:
+  - network-policy.yaml
+  - pod-security-policy.yaml
+  - resource-quota.yaml
+
+# Patch the deployment with secure configurations
+patchesStrategicMerge:
+  - deployment-secure-patch.yaml
+
+# ConfigMap modifications
+configMapGenerator:
+  - name: cloudsecdemo-config
+    behavior: merge
+    literals:
+      - LOG_LEVEL=info
+      - ENABLE_AUDIT=true
+      - SECURE_MODE=true
+
+---
+# network-policy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cloudsecdemo-network-policy
+  namespace: cloudsecdemo
+spec:
+  podSelector:
+    matchLabels:
+      app: cloudsecdemo
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: cloudsecdemo
+    ports:
+    - protocol: TCP
+      port: 3000
+  egress:
+  - to:
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 27017
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53
+
+---
+# pod-security-policy.yaml
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: cloudsecdemo-psp
+spec:
+  privileged: false
+  seLinux:
+    rule: RunAsAny
+  runAsUser:
+    rule: MustRunAsNonRoot
+  fsGroup:
+    rule: RunAsAny
+  volumes:
+  - 'configMap'
+  - 'emptyDir'
+  - 'projected'
+  - 'secret'
+  - 'downwardAPI'
+  allowPrivilegeEscalation: false
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+
+---
+# deployment-secure-patch.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudsecdemo-app
+spec:
+  template:
+    metadata:
+      annotations:
+        seccomp.security.alpha.kubernetes.io/pod: 'runtime/default'
+    spec:
+      containers:
+      - name: app
+        securityContext:
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+        resources:
+          limits:
+            cpu: 200m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+
+---
+# resource-quota.yaml
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: cloudsecdemo-quota
+spec:
+  hard:
+    pods: "10"
+    requests.cpu: "1"
+    requests.memory: 1Gi
+    limits.cpu: "2"
+    limits.memory: 2Gi

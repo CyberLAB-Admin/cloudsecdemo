@@ -1,0 +1,152 @@
+#############################################################################
+# Cloud Security Demo - Main Configuration
+# 
+# This configuration file defines all settings for the demo environment.
+# It includes:
+# - AWS infrastructure settings
+# - Security states configuration
+# - Monitoring settings
+# - Application configuration
+#############################################################################
+
+# Project-wide settings
+project:
+  name: cloudsecdemo
+  environment: secure  # or 'insecure'
+  region: us-east-1
+  tags:
+    Project: cloudsecdemo
+    Owner: ${OWNER_EMAIL}
+    Environment: ${ENVIRONMENT}
+
+# Infrastructure configuration
+infrastructure:
+  vpc:
+    cidr: 10.0.0.0/16
+    subnets:
+      public:
+        - cidr: 10.0.1.0/24
+          az: a
+        - cidr: 10.0.2.0/24
+          az: b
+      private:
+        - cidr: 10.0.3.0/24
+          az: a
+        - cidr: 10.0.4.0/24
+          az: b
+
+  eks:
+    version: "1.24"
+    node_groups:
+      - name: standard
+        instance_type: t3.medium
+        desired_size: 2
+        max_size: 4
+        min_size: 1
+
+  database:
+    engine: mongodb
+    version: "5.0"
+    instance_type: t3.medium
+    storage_size_gb: 20
+
+# Security States Configuration
+security_states:
+  secure:
+    network:
+      enable_flow_logs: true
+      enable_vpc_endpoints: true
+      restrict_default_sg: true
+    
+    storage:
+      s3:
+        enable_encryption: true
+        block_public_access: true
+        enable_versioning: true
+        
+    compute:
+      eks:
+        private_endpoint: true
+        encryption_config: true
+        security_groups:
+          restrict_worker_nodes: true
+          
+    database:
+      encryption_at_rest: true
+      backup_enabled: true
+      auth_required: true
+      network_isolation: true
+      
+    iam:
+      enforce_mfa: true
+      restrict_root_access: true
+      use_role_policies: true
+
+  insecure:
+    network:
+      enable_flow_logs: false
+      enable_vpc_endpoints: false
+      restrict_default_sg: false
+    
+    storage:
+      s3:
+        enable_encryption: false
+        block_public_access: false
+        enable_versioning: false
+        
+    compute:
+      eks:
+        private_endpoint: false
+        encryption_config: false
+        security_groups:
+          restrict_worker_nodes: false
+          
+    database:
+      encryption_at_rest: false
+      backup_enabled: false
+      auth_required: false
+      network_isolation: false
+      
+    iam:
+      enforce_mfa: false
+      restrict_root_access: false
+      use_role_policies: false
+
+# Monitoring Configuration
+monitoring:
+  cloudwatch:
+    log_retention_days: 30
+    metrics_enabled: true
+    dashboards_enabled: true
+    
+  lambda:
+    monitor_frequency: rate(5 minutes)
+    timeout_seconds: 300
+    memory_size: 256
+    
+  alerting:
+    sns_topic_name: cloudsecdemo-alerts
+    email_notifications: true
+    slack_notifications: false
+    notification_levels:
+      - ERROR
+      - SECURITY_CHANGE
+      - STATE_CHANGE
+
+# Application Configuration
+application:
+  name: demo-app
+  replicas: 2
+  image:
+    repository: ${ECR_REPOSITORY}
+    tag: latest
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  env:
+    NODE_ENV: production
+    LOG_LEVEL: info

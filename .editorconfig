@@ -1,0 +1,59 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+# Unix-style newlines with a newline ending every file
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# Python files
+[*.py]
+indent_size = 4
+
+# Shell scripts
+[*.sh]
+indent_size = 4
+shell_variant = bash
+binary_next_line = true
+switch_case_indent = true
+space_redirects = true
+keep_padding = true
+function_next_line = true
+
+# Terraform files
+[*.{tf,tfvars}]
+indent_size = 2
+indent_style = space
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = off
+
+# YAML files
+[*.{yml,yaml}]
+indent_size = 2
+indent_style = space
+
+# JavaScript/TypeScript files
+[*.{js,jsx,ts,tsx}]
+indent_size = 2
+quote_type = single
+
+# JSON files
+[*.json]
+indent_size = 2
+
+# Makefiles
+[Makefile]
+indent_style = tab
+
+# Documentation
+[docs/*]
+max_line_length = 80

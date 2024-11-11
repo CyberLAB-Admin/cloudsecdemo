@@ -1,0 +1,104 @@
+#############################################################################
+# Cloud Security Demo - Base Kubernetes Deployment
+# 
+# Base configuration for the application deployment including:
+# - Deployment
+# - Service
+# - ServiceAccount
+# - ConfigMap
+#############################################################################
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cloudsecdemo
+  labels:
+    name: cloudsecdemo
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cloudsecdemo-sa
+  namespace: cloudsecdemo
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudsecdemo-config
+  namespace: cloudsecdemo
+data:
+  NODE_ENV: "production"
+  APP_PORT: "3000"
+  LOG_LEVEL: "info"
+  MONGODB_HOST: ${MONGODB_HOST}
+  MONGODB_PORT: "27017"
+  MONGODB_DATABASE: "demodb"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudsecdemo-app
+  namespace: cloudsecdemo
+  labels:
+    app: cloudsecdemo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cloudsecdemo
+  template:
+    metadata:
+      labels:
+        app: cloudsecdemo
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "3000"
+    spec:
+      serviceAccountName: cloudsecdemo-sa
+      containers:
+      - name: app
+        image: ${ECR_REPOSITORY}/cloudsecdemo:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+          name: http
+        envFrom:
+        - configMapRef:
+            name: cloudsecdemo-config
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloudsecdemo-service
+  namespace: cloudsecdemo
+  labels:
+    app: cloudsecdemo
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: http
+    protocol: TCP
+    name: http
+  selector:
+    app: cloudsecdemo
