@@ -36,8 +36,8 @@ readonly REQUIRED_PERMISSIONS=(
 )
 
 # AWS CLI default config
-readonly DEFAULT_OUTPUT_FORMAT="json"
-readonly DEFAULT_REGION=${AWS_DEFAULT_REGION:-"us-east-1"}
+DEFAULT_OUTPUT_FORMAT="json"
+DEFAULT_REGION=${AWS_DEFAULT_REGION:-"us-east-1"}
 
 # Minimum required service limits
 readonly MIN_EC2_INSTANCES=5
