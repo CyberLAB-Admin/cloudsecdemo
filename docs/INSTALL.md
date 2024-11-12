@@ -118,7 +118,7 @@ Start-Process "C:\Program Files\Docker\Docker\Docker Desktop.exe"
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/cloudsecdemo.git
+git clone https://github.com/CyberLAB-Admin/cloudsecdemo
 cd cloudsecdemo
 
 # Create configuration files
