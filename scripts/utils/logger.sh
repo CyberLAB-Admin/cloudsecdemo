@@ -25,17 +25,17 @@ set -u
 #############################################################################
 
 # Color definitions
-readonly LOG_COLOR_RED='\033[0;31m'
-readonly LOG_COLOR_GREEN='\033[0;32m'
-readonly LOG_COLOR_YELLOW='\033[1;33m'
-readonly LOG_COLOR_BLUE='\033[0;34m'
-readonly LOG_COLOR_NC='\033[0m' # No Color
+LOG_COLOR_RED='\033[0;31m'
+LOG_COLOR_GREEN='\033[0;32m'
+LOG_COLOR_YELLOW='\033[1;33m'
+LOG_COLOR_BLUE='\033[0;34m'
+LOG_COLOR_NC='\033[0m' # No Color
 
 # Log levels
-readonly LOG_LEVEL_DEBUG=0
-readonly LOG_LEVEL_INFO=1
-readonly LOG_LEVEL_WARN=2
-readonly LOG_LEVEL_ERROR=3
+LOG_LEVEL_DEBUG=0
+LOG_LEVEL_INFO=1
+LOG_LEVEL_WARN=2
+LOG_LEVEL_ERROR=3
 
 # Default configuration
 LOG_LEVEL=${LOG_LEVEL:-1}        # Default to INFO
