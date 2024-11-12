@@ -30,9 +30,7 @@ data:
   NODE_ENV: "production"
   APP_PORT: "3000"
   LOG_LEVEL: "info"
-  MONGODB_HOST: ${MONGODB_HOST}
-  MONGODB_PORT: "27017"
-  MONGODB_DATABASE: "demodb"
+  MONGODB_URI: "mongodb://${MONGODB_HOST}:27017/taskdb"  # Updated for tasky
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -58,7 +56,7 @@ spec:
       serviceAccountName: cloudsecdemo-sa
       containers:
       - name: app
-        image: ${ECR_REPOSITORY}/cloudsecdemo:latest
+        image: jeffthorne/tasky:latest  # Updated to use tasky image
         imagePullPolicy: Always
         ports:
         - containerPort: 3000
@@ -94,7 +92,7 @@ metadata:
   labels:
     app: cloudsecdemo
 spec:
-  type: ClusterIP
+  type: LoadBalancer  # Changed to LoadBalancer for external access
   ports:
   - port: 80
     targetPort: http

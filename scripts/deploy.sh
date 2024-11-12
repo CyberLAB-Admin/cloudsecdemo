@@ -214,6 +214,48 @@ main() {
     tag_resources
     validate_deployment
 
+    # Post-deployment configuration
+    log_info "Running post-deployment configuration..."
+    
+    # Get MongoDB endpoint
+    log_info "Getting MongoDB endpoint from Terraform..."
+    DB_ENDPOINT=$(terraform output -json | jq -r '.database_endpoint.value')
+    
+    if [[ -z "$DB_ENDPOINT" ]]; then
+        log_error "Failed to get MongoDB endpoint from Terraform output"
+    fi
+
+    # Update ConfigMap with MongoDB URI
+    log_info "Updating Kubernetes ConfigMap..."
+    MONGODB_URI="mongodb://${DB_ENDPOINT}/taskdb"
+    
+    kubectl get configmap cloudsecdemo-config -n cloudsecdemo -o yaml | \
+        sed "s|MONGODB_URI:.*|MONGODB_URI: \"$MONGODB_URI\"|" | \
+        kubectl apply -f -
+
+    # Rollout restart to pick up new config
+    log_info "Restarting deployment to pick up new configuration..."
+    kubectl rollout restart deployment cloudsecdemo-app -n cloudsecdemo
+
+    # Wait for rollout to complete
+    log_info "Waiting for deployment rollout to complete..."
+    kubectl rollout status deployment cloudsecdemo-app -n cloudsecdemo --timeout=300s
+
+    # Get service URL
+    log_info "Waiting for LoadBalancer external IP/hostname..."
+    for i in {1..30}; do
+        EXTERNAL_IP=$(kubectl get svc cloudsecdemo-service -n cloudsecdemo -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        if [[ -n "$EXTERNAL_IP" ]]; then
+            break
+        fi
+        log_info "Waiting for LoadBalancer to be ready... ($i/30)"
+        sleep 10
+    done
+
+    if [[ -z "$EXTERNAL_IP" ]]; then
+        log_error "Failed to get LoadBalancer external IP/hostname"
+    fi
+
     log_success "Deployment completed successfully!"
 
     # Display access information
@@ -223,16 +265,28 @@ Deployment Summary:
 ------------------
 Environment: $ENVIRONMENT
 Kubernetes Context: $(kubectl config current-context)
-Application URL: $(kubectl get svc -n cloudsecdemo cloudsecdemo-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+Application URL: http://${EXTERNAL_IP}
+MongoDB Endpoint: ${DB_ENDPOINT}
 Monitoring Dashboard: https://${AWS_REGION}.console.aws.amazon.com/cloudwatch/home?region=${AWS_REGION}#dashboards:name=${PROJECT_NAME}-security
 
 Next Steps:
-1. Access the application at the URL above
+1. Access the application at: http://${EXTERNAL_IP}
 2. Check the monitoring dashboard
 3. Review the security state using the monitor function
 
 For more information, see the documentation in docs/
 EOF
+
+    # Save access information to file
+    cat > access-info.txt << EOF
+Access Information
+-----------------
+Application URL: http://${EXTERNAL_IP}
+MongoDB Endpoint: ${DB_ENDPOINT}
+Monitoring Dashboard: https://${AWS_REGION}.console.aws.amazon.com/cloudwatch/home?region=${AWS_REGION}#dashboards:name=${PROJECT_NAME}-security
+EOF
+
+    log_info "Access information saved to access-info.txt"
 }
 
 # Execute main function
