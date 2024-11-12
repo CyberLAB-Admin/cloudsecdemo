@@ -31,7 +31,7 @@ readonly REQUIRED_AWS_CLI_VERSION="2.0.0"
 
 # System requirements
 readonly REQUIRED_MEMORY_GB=4
-readonly REQUIRED_DISK_SPACE_GB=10
+readonly REQUIRED_DISK_SPACE_GB=5
 
 # Required commands
 readonly REQUIRED_COMMANDS=(
