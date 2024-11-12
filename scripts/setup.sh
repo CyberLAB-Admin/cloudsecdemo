@@ -22,9 +22,9 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$( cd "${SCRIPT_DIR}/.." && pwd )"
 
 # Source utility scripts
-source "${PROJECT_ROOT}/utils/logger.sh"
-source "${PROJECT_ROOT}/utils/prereq_check.sh"
-source "${PROJECT_ROOT}/utils/aws_setup.sh"
+source "${PROJECT_ROOT}/scripts/utils/logger.sh"
+source "${PROJECT_ROOT}/scripts/utils/prereq_check.sh"
+source "${PROJECT_ROOT}/scripts/utils/aws_setup.sh"
 
 #############################################################################
 # Global Variables and Constants
