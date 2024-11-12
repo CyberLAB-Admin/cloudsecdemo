@@ -124,7 +124,6 @@ check_system_resources() {
     
     if [[ $free_space_gb -lt $REQUIRED_DISK_SPACE_GB ]]; then
         log_error "Insufficient disk space: ${free_space_gb}GB available, ${REQUIRED_DISK_SPACE_GB}GB required"
-    }
     
     log_success "System resource check passed"
 }
