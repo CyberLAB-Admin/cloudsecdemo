@@ -19,9 +19,9 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$( cd "${SCRIPT_DIR}/.." && pwd )"
 
 # Source common utilities
-source "${SCRIPT_DIR}/utils/logger.sh"
-source "${SCRIPT_DIR}/utils/aws_setup.sh"
-source "${SCRIPT_DIR}/utils/validate_config.sh"
+source "${PROJECT_ROOT}/scripts/utils/logger.sh"
+source "${PROJECT_ROOT}/scripts/utils/aws_setup.sh"
+source "${PROJECT_ROOT}/scripts/utils/validate_config.sh"
 
 #############################################################################
 # Configuration and Arguments
