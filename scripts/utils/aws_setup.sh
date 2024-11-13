@@ -6,7 +6,7 @@
 # This script handles AWS credentials and configuration validation/setup.
 # It provides functions for:
 # - Validating AWS credentials
-# - Checking required IAM permissions
+# - Directing users to required permissions
 # - Setting up AWS CLI configuration
 # - Validating region settings
 # - Checking account limits
@@ -23,17 +23,6 @@ source "${SCRIPT_DIR}/logger.sh"
 #############################################################################
 # Global Variables and Constants
 #############################################################################
-
-# Required IAM permissions array
-readonly REQUIRED_PERMISSIONS=(
-    "ec2:*"
-    "eks:*"
-    "iam:*"
-    "s3:*"
-    "lambda:*"
-    "cloudwatch:*"
-    "config:*"
-)
 
 # AWS CLI default config
 DEFAULT_OUTPUT_FORMAT="json"
@@ -83,31 +72,26 @@ validate_aws_credentials() {
 
 # Check for required IAM permissions
 check_iam_permissions() {
-    log_debug "Checking IAM permissions..."
+    log_info "Checking AWS CLI configuration and access..."
     
-    local missing_permissions=()
-    
-    for permission in "${REQUIRED_PERMISSIONS[@]}"; do
-        log_debug "Checking permission: ${permission}"
-        
-        # Use dry-run when possible to check permissions
-        if [[ ${permission} == "ec2:*" ]]; then
-            if ! aws ec2 describe-instances --dry-run 2>/dev/null; then
-                missing_permissions+=("${permission}")
-            fi
-        elif [[ ${permission} == "s3:*" ]]; then
-            if ! aws s3 ls 2>/dev/null; then
-                missing_permissions+=("${permission}")
-            fi
-        # Add more specific permission checks as needed
-        fi
-    done
-    
-    if [[ ${#missing_permissions[@]} -gt 0 ]]; then
-        log_error "Missing required AWS permissions: ${missing_permissions[*]}"
+    # Check if AWS CLI is configured and can make API calls
+    if ! aws sts get-caller-identity &>/dev/null; then
+        log_error "Unable to authenticate with AWS. Please ensure your AWS CLI is configured correctly."
     fi
+
+    log_warn "To ensure proper functioning of this demo, please verify your IAM permissions."
+    log_warn "Required permissions are documented in docs/AWS_Permissions.json"
+    log_warn "Please apply these permissions to the IAM user/role you're using with the AWS CLI."
     
-    log_success "IAM permission check passed"
+    # Ask user to confirm
+    read -p "Have you applied the required permissions from docs/AWS_Permissions.json? (y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        log_error "Please apply the required permissions before proceeding. See docs/AWS_Permissions.json for details."
+    fi
+
+    log_success "AWS authentication check passed"
+    return 0
 }
 
 #############################################################################
