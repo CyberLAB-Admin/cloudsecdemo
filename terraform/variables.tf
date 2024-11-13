@@ -16,6 +16,15 @@ variable "project_name" {
   default     = "cloudsecdemo"
 }
 
+variable "environment" {
+  description = "Deployment environment (secure or insecure)"
+  type        = string
+  validation {
+    condition     = contains(["secure", "insecure"], var.environment)
+    error_message = "Environment must be either 'secure' or 'insecure'."
+  }
+}
+
 variable "owner_email" {
   description = "Email address of the project owner"
   type        = string
