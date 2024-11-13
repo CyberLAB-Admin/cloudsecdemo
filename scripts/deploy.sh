@@ -99,6 +99,22 @@ deploy_infrastructure() {
 
     cd "${PROJECT_ROOT}/terraform"
 
+    # Create DynamoDB table for state locking if it doesn't exist
+    log_info "Checking DynamoDB table for state locking..."
+    if ! aws dynamodb describe-table --table-name terraform-state-lock &>/dev/null; then
+        log_info "Creating DynamoDB table for state locking..."
+        aws dynamodb create-table \
+            --table-name terraform-state-lock \
+            --attribute-definitions AttributeName=LockID,AttributeType=S \
+            --key-schema AttributeName=LockID,KeyType=HASH \
+            --billing-mode PAY_PER_REQUEST \
+            --tags Key=Project,Value=${PROJECT_NAME} || log_error "Failed to create DynamoDB table"
+        
+        # Wait for table to be active
+        log_info "Waiting for DynamoDB table to be ready..."
+        aws dynamodb wait table-exists --table-name terraform-state-lock
+    fi
+
     # Initialize Terraform
     log_info "Initializing Terraform..."
     terraform init
