@@ -42,6 +42,42 @@ aws sts get-caller-identity
 
 # Check required permissions
 ./scripts/utils/aws_setup.sh --check-permissions
+
+# Create the required Terraform State s3 bucket
+
+# Set your AWS account ID (replace with your actual account ID)
+AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+
+# Create bucket name using account ID for uniqueness
+BUCKET_NAME="cloudsecdemo-tfstate-${AWS_ACCOUNT_ID}"
+
+# Create the bucket
+aws s3 mb "s3://${BUCKET_NAME}" --region us-east-1
+
+# Enable versioning
+aws s3api put-bucket-versioning \
+    --bucket "${BUCKET_NAME}" \
+    --versioning-configuration Status=Enabled
+
+# Block public access (security best practice)
+aws s3api put-public-access-block \
+    --bucket "${BUCKET_NAME}" \
+    --public-access-block-configuration \
+        "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
+
+# Add encryption
+aws s3api put-bucket-encryption \
+    --bucket "${BUCKET_NAME}" \
+    --server-side-encryption-configuration \
+        '{"Rules": [{"ApplyServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}}]}'
+
+# Verify the bucket creation
+aws s3api head-bucket --bucket "${BUCKET_NAME}"
+
+# Output the bucket name to use in your .env file
+echo "Your Terraform state bucket name is: ${BUCKET_NAME}"
+echo "Add this to your .env file as: TERRAFORM_STATE_BUCKET=${BUCKET_NAME}"
+
 ```
 
 Required AWS permissions are listed in `docs/AWS_PERMISSIONS.md`.
@@ -144,6 +180,19 @@ vim .env
 ### 4. Initial Deployment
 
 ```bash
+
+#Modify your s3 bucket config in your ./terraform/main.tf
+
+#use this as a guide:
+
+#backend "s3" {
+#    bucket         = "cloudsecdemo-tfstate-YOUR_ACCOUNT_ID"  # Replace with actual bucket name you created
+#    key            = "cloudsecdemo/terraform.tfstate"
+#    region         = "us-east-1"                            # Or your chosen region
+#    dynamodb_table = "terraform-state-lock"
+#    encrypt        = true
+#}
+
 # Deploy in secure state
 ./scripts/deploy.sh secure
 

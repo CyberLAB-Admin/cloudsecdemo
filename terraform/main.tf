@@ -24,10 +24,10 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = var.terraform_state_bucket
-    key            = var.terraform_state_key
-    region         = var.aws_region
-    dynamodb_table = var.terraform_state_dynamodb_table
+    bucket         = "cloudsecdemo-tfstate-YOUR_ACCOUNT_ID"
+    key            = "cloudsecdemo/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "terraform-state-lock"
     encrypt        = true
   }
 }
