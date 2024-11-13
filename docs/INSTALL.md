@@ -54,6 +54,32 @@ BUCKET_NAME="cloudsecdemo-tfstate-${AWS_ACCOUNT_ID}"
 # Create the bucket
 aws s3 mb "s3://${BUCKET_NAME}" --region us-east-1
 
+
+# Define variables
+AWS_ACCOUNT_ID="your_account_id"
+BUCKET_NAME="your_bucket_name"
+
+# Create the bucket policy as a JSON string
+
+#You can either add the docs/Bucket_Policy.json manually to your bucket in s3 or try the following from the project root:
+#You must first modify your Bucket_Policy.json file to include your bucket and AWS profile information.
+
+aws s3api put-bucket-policy --bucket my-bucket-name --policy file://./docs/Bucket_Policy.json
+
+# Apply the policy to the bucket
+aws s3api put-bucket-policy \
+    --bucket "$BUCKET_NAME" \
+    --policy "$POLICY"
+
+# Create DynamoDB table for state locking
+aws dynamodb create-table \
+    --table-name terraform-state-lock \
+    --attribute-definitions AttributeName=LockID,AttributeType=S \
+    --key-schema AttributeName=LockID,KeyType=HASH \
+    --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
+
+
+
 # Enable versioning
 aws s3api put-bucket-versioning \
     --bucket "${BUCKET_NAME}" \
@@ -80,7 +106,9 @@ echo "Add this to your .env file as: TERRAFORM_STATE_BUCKET=${BUCKET_NAME}"
 
 ```
 
+### AWS USER PERMISSIONS
 Required AWS permissions are listed in `docs/AWS_PERMISSIONS.md`.
+You must add your required region and AWS account number before applying this.
 
 ### 2. Tool Installation
 

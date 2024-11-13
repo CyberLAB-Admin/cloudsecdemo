@@ -104,7 +104,7 @@ deploy_infrastructure() {
     terraform init
 
     # Select workspace
-    terraform workspace select "$ENVIRONMENT" || terraform workspace new "$ENVIRONMENT"
+    terraform workspace select -or-create "$ENVIRONMENT" || terraform workspace new "$ENVIRONMENT"
 
     # Plan deployment
     log_info "Planning Terraform deployment..."
